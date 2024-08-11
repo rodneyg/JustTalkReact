@@ -5,17 +5,20 @@ import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Button from "../components/Button";
+import { transcribeAudio } from "../api/openai"; // Import the transcribeAudio function
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [transcription, setTranscription] = useState<string | null>(null);
   const toast = useToast();
 
   const handleRecordingStart = () => {
     setIsLoading(true);
     setError(null);
     setAudioBlob(null);
+    setTranscription(null); // Reset transcription when starting a new recording
     // Simulating an async operation
     setTimeout(() => {
       setIsLoading(false);
@@ -37,9 +40,32 @@ const Home: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleTranscribe = () => {
-    // We'll implement this function later
-    console.log("Transcribe button clicked");
+  const handleTranscribe = async () => {
+    if (!audioBlob) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await transcribeAudio(audioBlob);
+      setTranscription(result);
+      toast({
+        title: "Transcription complete",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (err) {
+      setError("Failed to transcribe audio");
+      toast({
+        title: "Transcription failed",
+        status: "error",
+        duration: 2000,
+        isClosable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,7 +88,7 @@ const Home: React.FC = () => {
           onError={handleRecordingError}
         />
       )}
-      {audioBlob && (
+      {audioBlob && !transcription && (
         <Button
           colorScheme="blue"
           size="lg"
@@ -71,6 +97,14 @@ const Home: React.FC = () => {
         >
           Transcribe Audio
         </Button>
+      )}
+      {transcription && (
+        <Box>
+          <Heading size="md" mb={2}>
+            Transcription:
+          </Heading>
+          <Text>{transcription}</Text>
+        </Box>
       )}
     </VStack>
   );
