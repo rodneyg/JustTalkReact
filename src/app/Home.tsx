@@ -1,9 +1,9 @@
 // src/app/Home.tsx
-import React, { useState } from 'react';
-import { VStack, Heading, useToast } from '@chakra-ui/react';
-import AudioRecorder from '../features/audioRecording/components/AudioRecorder';
-import ErrorMessage from '../components/ErrorMessage';
-import LoadingSpinner from '../components/LoadingSpinner';
+import React, { useState } from "react";
+import { VStack, Heading, useToast } from "@chakra-ui/react";
+import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
+import ErrorMessage from "../components/ErrorMessage";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +37,7 @@ const Home: React.FC = () => {
       {isLoading ? (
         <LoadingSpinner />
       ) : (
-        <AudioRecorder 
+        <AudioRecorder
           onRecordingStart={handleRecordingStart}
           onError={handleRecordingError}
         />
