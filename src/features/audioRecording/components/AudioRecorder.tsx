@@ -6,11 +6,13 @@ import Button from "../../../components/Button";
 
 interface AudioRecorderProps {
   onRecordingStart: () => void;
+  onRecordingComplete: (blob: Blob) => void;
   onError: (error: string) => void;
 }
 
 const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingStart,
+  onRecordingComplete,
   onError,
 }) => {
   const { isRecording, startRecording, stopRecording, audioBlob } =
@@ -32,8 +34,9 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
     if (audioBlob) {
       const url = URL.createObjectURL(audioBlob);
       setAudioUrl(url);
+      onRecordingComplete(audioBlob);
     }
-  }, [audioBlob]);
+  }, [audioBlob, onRecordingComplete]);
 
   return (
     <VStack spacing={4} align="stretch">
