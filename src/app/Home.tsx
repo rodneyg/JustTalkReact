@@ -9,11 +9,13 @@ import Button from "../components/Button";
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const toast = useToast();
 
   const handleRecordingStart = () => {
     setIsLoading(true);
     setError(null);
+    setAudioBlob(null);
     // Simulating an async operation
     setTimeout(() => {
       setIsLoading(false);
@@ -26,9 +28,18 @@ const Home: React.FC = () => {
     }, 1000);
   };
 
+  const handleRecordingComplete = (blob: Blob) => {
+    setAudioBlob(blob);
+  };
+
   const handleRecordingError = (errorMessage: string) => {
     setError(errorMessage);
     setIsLoading(false);
+  };
+
+  const handleTranscribe = () => {
+    // We'll implement this function later
+    console.log("Transcribe button clicked");
   };
 
   return (
@@ -47,12 +58,20 @@ const Home: React.FC = () => {
       ) : (
         <AudioRecorder
           onRecordingStart={handleRecordingStart}
+          onRecordingComplete={handleRecordingComplete}
           onError={handleRecordingError}
         />
       )}
-      <Button colorScheme="blue" size="lg" width="full">
-        Transcribe Audio
-      </Button>
+      {audioBlob && (
+        <Button
+          colorScheme="blue"
+          size="lg"
+          width="full"
+          onClick={handleTranscribe}
+        >
+          Transcribe Audio
+        </Button>
+      )}
     </VStack>
   );
 };
