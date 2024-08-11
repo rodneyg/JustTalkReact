@@ -1,9 +1,10 @@
 // src/app/Home.tsx
 import React, { useState } from "react";
-import { VStack, Heading, useToast } from "@chakra-ui/react";
+import { VStack, Heading, Text, useToast, Box } from "@chakra-ui/react";
 import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
 import LoadingSpinner from "../components/LoadingSpinner";
+import Button from "../components/Button";
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +32,15 @@ const Home: React.FC = () => {
   };
 
   return (
-    <VStack spacing={4} align="stretch">
-      <Heading>JustTalk</Heading>
+    <VStack spacing={8} align="stretch">
+      <Box textAlign="center">
+        <Heading as="h1" size="2xl" mb={2}>
+          JustTalk
+        </Heading>
+        <Text fontSize="xl" color="gray.600">
+          Your AI-powered audio assistant
+        </Text>
+      </Box>
       {error && <ErrorMessage title="Error" description={error} />}
       {isLoading ? (
         <LoadingSpinner />
@@ -42,6 +50,9 @@ const Home: React.FC = () => {
           onError={handleRecordingError}
         />
       )}
+      <Button colorScheme="blue" size="lg" width="full">
+        Transcribe Audio
+      </Button>
     </VStack>
   );
 };
