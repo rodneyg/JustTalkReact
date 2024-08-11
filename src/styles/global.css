@@ -1,0 +1,15 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+  @apply antialiased text-gray-900;
+}
+
+.chakra-button {
+  @apply transform transition duration-200 ease-in-out;
+}
+
+.chakra-button:hover {
+  @apply -translate-y-0.5 shadow-md;
+}
