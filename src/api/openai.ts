@@ -2,8 +2,7 @@
 import axios from "axios";
 
 const API_URL = "https://api.openai.com/v1";
-const API_KEY =
-  "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";
+const API_KEY = "";
 
 if (!API_KEY) {
   throw new Error("OpenAI API key is not set");
