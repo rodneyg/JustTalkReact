@@ -17,6 +17,8 @@ const Home: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [transformation, setTransformation] = useState<string>("summarize");
   const [transformedText, setTransformedText] = useState<string | null>(null);
+  const [hasAttemptedTranscription, setHasAttemptedTranscription] =
+    useState(false);
   const toast = useToast();
 
   const handleRecordingStart = () => {
@@ -25,6 +27,7 @@ const Home: React.FC = () => {
     setAudioBlob(null);
     setTranscription(null);
     setTransformedText(null);
+    setHasAttemptedTranscription(false);
     setIsRecording(true);
     toast({
       title: "Recording started",
@@ -62,12 +65,15 @@ const Home: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setTranscription(null);
+    setTransformedText(null);
 
     try {
       console.log("Starting transcription...");
       const result = await transcribeAudio(audioBlob);
       console.log("Transcription result:", result);
       setTranscription(result);
+      setHasAttemptedTranscription(true);
       toast({
         title: "Transcription complete",
         status: "success",
@@ -150,7 +156,7 @@ const Home: React.FC = () => {
         onRecordingComplete={handleRecordingComplete}
         onError={handleRecordingError}
       />
-      {audioBlob && !transcription && !isRecording && (
+      {audioBlob && !isRecording && (
         <Button
           colorScheme="blue"
           size="lg"
@@ -158,7 +164,9 @@ const Home: React.FC = () => {
           onClick={handleTranscribe}
           isLoading={isLoading}
         >
-          Transcribe Audio
+          {hasAttemptedTranscription
+            ? "Retry Transcription"
+            : "Transcribe Audio"}
         </Button>
       )}
       {transcription && (
