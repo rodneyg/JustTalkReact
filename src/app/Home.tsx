@@ -1,6 +1,6 @@
 // src/app/Home.tsx
 import React, { useState } from "react";
-import { VStack, Heading, Text, useToast, Box } from "@chakra-ui/react";
+import { VStack, Heading, Text, useToast, Box, HStack } from "@chakra-ui/react";
 import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -138,6 +138,31 @@ const Home: React.FC = () => {
     }
   };
 
+  const copyToClipboard = (
+    text: string,
+    type: "transcription" | "transformation",
+  ) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        toast({
+          title: `${type === "transcription" ? "Transcription" : "Transformed text"} copied`,
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to copy text: ", err);
+        toast({
+          title: "Failed to copy text",
+          status: "error",
+          duration: 2000,
+          isClosable: true,
+        });
+      });
+  };
+
   return (
     <VStack spacing={8} align="stretch">
       <Box textAlign="center">
@@ -171,9 +196,15 @@ const Home: React.FC = () => {
       )}
       {transcription && (
         <Box>
-          <Heading size="md" mb={2}>
-            Transcription:
-          </Heading>
+          <HStack justify="space-between" align="center" mb={2}>
+            <Heading size="md">Transcription:</Heading>
+            <Button
+              size="sm"
+              onClick={() => copyToClipboard(transcription, "transcription")}
+            >
+              Copy
+            </Button>
+          </HStack>
           <Text>{transcription}</Text>
           <Box mt={4}>
             <TransformationSelector
@@ -193,7 +224,20 @@ const Home: React.FC = () => {
           </Box>
         </Box>
       )}
-      {transformedText && <TransformedTextDisplay text={transformedText} />}
+      {transformedText && (
+        <Box>
+          <HStack justify="space-between" align="center" mb={2}>
+            <Heading size="md">Transformed Text:</Heading>
+            <Button
+              size="sm"
+              onClick={() => copyToClipboard(transformedText, "transformation")}
+            >
+              Copy
+            </Button>
+          </HStack>
+          <Text>{transformedText}</Text>
+        </Box>
+      )}
     </VStack>
   );
 };
