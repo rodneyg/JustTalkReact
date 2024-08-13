@@ -5,30 +5,38 @@ import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Button from "../components/Button";
-import { transcribeAudio } from "../api/openai"; // Import the transcribeAudio function
+import { transcribeAudio } from "../api/openai";
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcription, setTranscription] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const toast = useToast();
 
   const handleRecordingStart = () => {
-    setIsLoading(true);
+    setIsLoading(false);
     setError(null);
     setAudioBlob(null);
-    setTranscription(null); // Reset transcription when starting a new recording
-    // Simulating an async operation
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Recording started",
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-      });
-    }, 1000);
+    setTranscription(null);
+    setIsRecording(true);
+    toast({
+      title: "Recording started",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+    });
+  };
+
+  const handleRecordingStop = () => {
+    setIsRecording(false);
+    toast({
+      title: "Recording stopped",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+    });
   };
 
   const handleRecordingComplete = (blob: Blob) => {
@@ -38,16 +46,22 @@ const Home: React.FC = () => {
   const handleRecordingError = (errorMessage: string) => {
     setError(errorMessage);
     setIsLoading(false);
+    setIsRecording(false);
   };
 
   const handleTranscribe = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob) {
+      setError("No audio recording found. Please record audio first.");
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log("Starting transcription...");
       const result = await transcribeAudio(audioBlob);
+      console.log("Transcription result:", result);
       setTranscription(result);
       toast({
         title: "Transcription complete",
@@ -56,11 +70,17 @@ const Home: React.FC = () => {
         isClosable: true,
       });
     } catch (err) {
-      setError("Failed to transcribe audio");
+      console.error("Transcription error:", err);
+      let errorMessage = "Failed to transcribe audio";
+      if (err instanceof Error) {
+        errorMessage += `: ${err.message}`;
+      }
+      setError(errorMessage);
       toast({
         title: "Transcription failed",
+        description: errorMessage,
         status: "error",
-        duration: 2000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
@@ -79,21 +99,20 @@ const Home: React.FC = () => {
         </Text>
       </Box>
       {error && <ErrorMessage title="Error" description={error} />}
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <AudioRecorder
-          onRecordingStart={handleRecordingStart}
-          onRecordingComplete={handleRecordingComplete}
-          onError={handleRecordingError}
-        />
-      )}
-      {audioBlob && !transcription && (
+      <AudioRecorder
+        isRecording={isRecording}
+        onRecordingStart={handleRecordingStart}
+        onRecordingStop={handleRecordingStop}
+        onRecordingComplete={handleRecordingComplete}
+        onError={handleRecordingError}
+      />
+      {audioBlob && !transcription && !isRecording && (
         <Button
           colorScheme="blue"
           size="lg"
           width="full"
           onClick={handleTranscribe}
+          isLoading={isLoading}
         >
           Transcribe Audio
         </Button>

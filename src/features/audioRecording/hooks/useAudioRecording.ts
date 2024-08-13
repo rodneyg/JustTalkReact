@@ -1,3 +1,4 @@
+// src/features/audioRecording/hooks/useAudioRecording.ts
 import { useState, useCallback } from "react";
 
 const useAudioRecording = () => {
@@ -7,29 +8,39 @@ const useAudioRecording = () => {
     null,
   );
 
-  const startRecording = useCallback(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        const recorder = new MediaRecorder(stream);
-        setMediaRecorder(recorder);
+  const startRecording = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          const recorder = new MediaRecorder(stream);
+          setMediaRecorder(recorder);
 
-        recorder.ondataavailable = (event) => {
-          setAudioBlob(event.data);
-        };
+          recorder.ondataavailable = (event) => {
+            setAudioBlob(event.data);
+          };
 
-        recorder.start();
-        setIsRecording(true);
-      })
-      .catch((error) => {
-        console.error("Error accessing microphone:", error);
-      });
+          recorder.onstart = () => {
+            setIsRecording(true);
+          };
+
+          recorder.onstop = () => {
+            setIsRecording(false);
+            stream.getTracks().forEach((track) => track.stop());
+          };
+
+          recorder.start();
+          resolve();
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
   }, []);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorder) {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
       mediaRecorder.stop();
-      setIsRecording(false);
     }
   }, [mediaRecorder]);
 

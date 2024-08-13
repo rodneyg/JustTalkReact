@@ -5,29 +5,36 @@ import useAudioRecording from "../hooks/useAudioRecording";
 import Button from "../../../components/Button";
 
 interface AudioRecorderProps {
+  isRecording: boolean;
   onRecordingStart: () => void;
+  onRecordingStop: () => void;
   onRecordingComplete: (blob: Blob) => void;
   onError: (error: string) => void;
 }
 
 const AudioRecorder: React.FC<AudioRecorderProps> = ({
+  isRecording,
   onRecordingStart,
+  onRecordingStop,
   onRecordingComplete,
   onError,
 }) => {
-  const { isRecording, startRecording, stopRecording, audioBlob } =
-    useAudioRecording();
+  const { startRecording, stopRecording, audioBlob } = useAudioRecording();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  const handleStartRecording = () => {
-    startRecording().catch((error) => {
-      onError(error.message);
-    });
-    onRecordingStart();
-  };
-
-  const handleStopRecording = () => {
-    stopRecording();
+  const handleToggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+      onRecordingStop();
+    } else {
+      startRecording()
+        .then(() => {
+          onRecordingStart();
+        })
+        .catch((error: Error) => {
+          onError(error.message);
+        });
+    }
   };
 
   useEffect(() => {
@@ -41,7 +48,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   return (
     <VStack spacing={4} align="stretch">
       <Button
-        onClick={isRecording ? handleStopRecording : handleStartRecording}
+        onClick={handleToggleRecording}
         colorScheme={isRecording ? "red" : "green"}
         leftIcon={isRecording ? "⏹️" : "🎙️"}
         size="lg"
@@ -53,7 +60,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
           Recording in progress...
         </Text>
       )}
-      {audioUrl && (
+      {audioUrl && !isRecording && (
         <Box borderWidth={1} borderRadius="lg" p={4} bg="gray.50">
           <Text mb={2} fontWeight="semibold">
             Your Recording:
