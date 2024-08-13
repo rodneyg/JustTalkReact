@@ -2,7 +2,8 @@
 import axios from "axios";
 
 const API_URL = "https://api.openai.com/v1";
-const API_KEY = (window as any).OPENAI_API_KEY;
+const API_KEY =
+  "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";
 
 if (!API_KEY) {
   throw new Error("OpenAI API key is not set");
@@ -22,15 +23,30 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   formData.append("model", "whisper-1");
 
   try {
+    console.log("Sending transcription request to OpenAI...");
     const response = await openaiApi.post("/audio/transcriptions", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
+    console.log("Transcription response:", response.data);
     return response.data.text;
   } catch (error) {
     console.error("Error transcribing audio:", error);
-    throw new Error("Failed to transcribe audio");
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        throw new Error(
+          `OpenAI API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+        );
+      } else if (error.request) {
+        throw new Error("No response received from OpenAI API");
+      } else {
+        throw new Error(`Error setting up request: ${error.message}`);
+      }
+    } else {
+      throw new Error("An unexpected error occurred");
+    }
   }
 };
 
