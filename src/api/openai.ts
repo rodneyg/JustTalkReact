@@ -56,7 +56,7 @@ export const transformText = async (
 ): Promise<string> => {
   try {
     const response = await openaiApi.post("/chat/completions", {
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
