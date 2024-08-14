@@ -1,6 +1,6 @@
 # JustTalk
 
-JustTalk is a SwiftUI-based iOS application that allows users to record audio, transcribe the audio using OpenAI's Whisper model, and transform the transcribed text into various formats such as email, summary, story, and text messages.
+JustTalk is a React-based application that allows users to record audio, transcribe the audio using OpenAI's Whisper model, and transform the transcribed text into various formats such as email, summary, story, and text messages.
 
 ## Features
 
