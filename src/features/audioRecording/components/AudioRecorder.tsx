@@ -19,19 +19,24 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingComplete,
   onError,
 }) => {
-  const { startRecording, stopRecording, audioBlob } = useAudioRecording();
+  const { startRecording, stopRecording, audioBlob, audioMimeType } =
+    useAudioRecording();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const handleToggleRecording = () => {
     if (isRecording) {
+      console.log("Stopping recording...");
       stopRecording();
       onRecordingStop();
     } else {
+      console.log("Starting recording...");
       startRecording()
         .then(() => {
+          console.log("Recording started successfully");
           onRecordingStart();
         })
         .catch((error: Error) => {
+          console.error("Error starting recording:", error);
           onError(error.message);
         });
     }
@@ -39,11 +44,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   useEffect(() => {
     if (audioBlob) {
+      console.log(
+        `Audio recorded: ${audioBlob.size} bytes, MIME type: ${audioMimeType}`,
+      );
       const url = URL.createObjectURL(audioBlob);
       setAudioUrl(url);
       onRecordingComplete(audioBlob);
     }
-  }, [audioBlob, onRecordingComplete]);
+  }, [audioBlob, audioMimeType, onRecordingComplete]);
 
   return (
     <VStack spacing={4} align="stretch">
