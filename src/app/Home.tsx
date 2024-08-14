@@ -15,6 +15,8 @@ const Home: React.FC = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcription, setTranscription] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [transcriptionProgress, setTranscriptionProgress] = useState(0);
+  const { chunkAudio } = useAudioRecording();
   const [transformation, setTransformation] = useState<string>("summarize");
   const [transformedText, setTransformedText] = useState<string | null>(null);
   const [hasAttemptedTranscription, setHasAttemptedTranscription] =
@@ -67,12 +69,22 @@ const Home: React.FC = () => {
     setError(null);
     setTranscription(null);
     setTransformedText(null);
+    setTranscriptionProgress(0);
 
     try {
       console.log("Starting transcription...");
-      const result = await transcribeAudio(audioBlob);
-      console.log("Transcription result:", result);
-      setTranscription(result);
+      const chunks = await chunkAudio(audioBlob);
+      let fullTranscription = "";
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const result = await transcribeAudio(chunk);
+        fullTranscription += result + " ";
+        setTranscriptionProgress(((i + 1) / chunks.length) * 100);
+      }
+
+      console.log("Transcription result:", fullTranscription);
+      setTranscription(fullTranscription.trim());
       setHasAttemptedTranscription(true);
       toast({
         title: "Transcription complete",
@@ -194,10 +206,19 @@ const Home: React.FC = () => {
             : "Transcribe Audio"}
         </Button>
       )}
+      {isLoading && (
+        <VStack>
+          <Text>Transcribing: {transcriptionProgress.toFixed(0)}%</Text>
+          <Progress value={transcriptionProgress} width="100%" />
+        </VStack>
+      )}
       {transcription && (
         <Box>
           <HStack justify="space-between" align="center" mb={2}>
             <Heading size="md">Transcription:</Heading>
+            <Text fontSize="sm" color="gray.500">
+              {transcription.length} characters
+            </Text>
             <Button
               size="sm"
               onClick={() => copyToClipboard(transcription, "transcription")}
@@ -205,7 +226,15 @@ const Home: React.FC = () => {
               Copy
             </Button>
           </HStack>
-          <Text>{transcription}</Text>
+          <Box
+            maxHeight="200px"
+            overflowY="auto"
+            borderWidth={1}
+            borderRadius="md"
+            p={2}
+          >
+            <Text>{transcription}</Text>
+          </Box>
           <Box mt={4}>
             <TransformationSelector
               value={transformation}
@@ -228,6 +257,9 @@ const Home: React.FC = () => {
         <Box>
           <HStack justify="space-between" align="center" mb={2}>
             <Heading size="md">Transformed Text:</Heading>
+            <Text fontSize="sm" color="gray.500">
+              {transformedText.length} characters
+            </Text>
             <Button
               size="sm"
               onClick={() => copyToClipboard(transformedText, "transformation")}
@@ -235,7 +267,15 @@ const Home: React.FC = () => {
               Copy
             </Button>
           </HStack>
-          <Text>{transformedText}</Text>
+          <Box
+            maxHeight="200px"
+            overflowY="auto"
+            borderWidth={1}
+            borderRadius="md"
+            p={2}
+          >
+            <Text>{transformedText}</Text>
+          </Box>
         </Box>
       )}
     </VStack>
