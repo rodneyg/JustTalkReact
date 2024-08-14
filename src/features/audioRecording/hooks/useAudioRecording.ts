@@ -1,5 +1,6 @@
 // src/features/audioRecording/hooks/useAudioRecording.ts
 import { useState, useCallback } from "react";
+import { getNetworkType, getChunkDuration } from "../../../utils/networkUtils";
 
 const useAudioRecording = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -8,10 +9,10 @@ const useAudioRecording = () => {
     null,
   );
 
-  const chunkAudio = async (
-    audioBlob: Blob,
-    chunkDuration: number = 30,
-  ): Promise<Blob[]> => {
+  const chunkAudio = async (audioBlob: Blob): Promise<Blob[]> => {
+    const networkType = getNetworkType();
+    const chunkDuration = getChunkDuration(networkType);
+
     const audioBuffer = await audioBlob.arrayBuffer();
     const audio = new AudioContext();
     const audioSource = await audio.decodeAudioData(audioBuffer);
