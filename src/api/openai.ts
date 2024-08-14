@@ -17,13 +17,19 @@ const openaiApi = axios.create({
   },
 });
 
-export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
+export const transcribeAudio = async (
+  audioBlob: Blob,
+  mimeType: string,
+): Promise<string> => {
   const formData = new FormData();
-  formData.append("file", audioBlob, "audio.webm");
+  const fileExtension = mimeType.split("/")[1];
+  formData.append("file", audioBlob, `audio.${fileExtension}`);
   formData.append("model", "whisper-1");
 
   try {
-    console.log("Sending transcription request to OpenAI...");
+    console.log(
+      `Sending transcription request to OpenAI... (MIME type: ${mimeType})`,
+    );
     const response = await openaiApi.post("/audio/transcriptions", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
