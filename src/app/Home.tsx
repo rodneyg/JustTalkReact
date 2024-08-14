@@ -1,13 +1,20 @@
 // src/app/Home.tsx
-import React, { useState } from "react";
-import { VStack, Heading, Text, useToast, Box, HStack } from "@chakra-ui/react";
+import React, { useState, useCallback } from "react";
+import {
+  VStack,
+  Heading,
+  Text,
+  useToast,
+  Box,
+  HStack,
+  Progress,
+} from "@chakra-ui/react";
 import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
-import LoadingSpinner from "../components/LoadingSpinner";
 import Button from "../components/Button";
 import TransformationSelector from "../components/TransformationSelector";
-import TransformedTextDisplay from "../components/TransformedTextDisplay";
 import { transcribeAudio, transformText } from "../api/openai";
+import useAudioRecording from "../features/audioRecording/hooks/useAudioRecording";
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,14 +23,15 @@ const Home: React.FC = () => {
   const [transcription, setTranscription] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [transcriptionProgress, setTranscriptionProgress] = useState(0);
-  const { chunkAudio } = useAudioRecording();
+  const { chunkAudio, audioMimeType } = useAudioRecording();
   const [transformation, setTransformation] = useState<string>("summarize");
   const [transformedText, setTransformedText] = useState<string | null>(null);
   const [hasAttemptedTranscription, setHasAttemptedTranscription] =
     useState(false);
   const toast = useToast();
 
-  const handleRecordingStart = () => {
+  const handleRecordingStart = useCallback(() => {
+    console.log("Recording started");
     setIsLoading(false);
     setError(null);
     setAudioBlob(null);
@@ -37,9 +45,10 @@ const Home: React.FC = () => {
       duration: 2000,
       isClosable: true,
     });
-  };
+  }, [toast]);
 
-  const handleRecordingStop = () => {
+  const handleRecordingStop = useCallback(() => {
+    console.log("Recording stopped");
     setIsRecording(false);
     toast({
       title: "Recording stopped",
@@ -47,20 +56,28 @@ const Home: React.FC = () => {
       duration: 2000,
       isClosable: true,
     });
-  };
+  }, [toast]);
 
-  const handleRecordingComplete = (blob: Blob) => {
-    setAudioBlob(blob);
-  };
+  const handleRecordingComplete = useCallback(
+    (blob: Blob) => {
+      console.log(
+        `Recording completed: ${blob.size} bytes, MIME type: ${audioMimeType}`,
+      );
+      setAudioBlob(blob);
+    },
+    [audioMimeType],
+  );
 
-  const handleRecordingError = (errorMessage: string) => {
+  const handleRecordingError = useCallback((errorMessage: string) => {
+    console.error("Recording error:", errorMessage);
     setError(errorMessage);
     setIsLoading(false);
     setIsRecording(false);
-  };
+  }, []);
 
-  const handleTranscribe = async () => {
+  const handleTranscribe = useCallback(async () => {
     if (!audioBlob) {
+      console.error("No audio recording found");
       setError("No audio recording found. Please record audio first.");
       return;
     }
@@ -74,11 +91,14 @@ const Home: React.FC = () => {
     try {
       console.log("Starting transcription...");
       const chunks = await chunkAudio(audioBlob);
+      console.log(`Audio chunked into ${chunks.length} parts`);
       let fullTranscription = "";
 
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        const result = await transcribeAudio(chunk);
+        console.log(`Transcribing chunk ${i + 1}/${chunks.length}`);
+        // Always use 'audio/wav' for transcription, as we've converted chunks to WAV
+        const result = await transcribeAudio(chunk, "audio/wav");
         fullTranscription += result + " ";
         setTranscriptionProgress(((i + 1) / chunks.length) * 100);
       }
@@ -109,10 +129,11 @@ const Home: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [audioBlob, chunkAudio, toast]);
 
-  const handleTransform = async () => {
+  const handleTransform = useCallback(async () => {
     if (!transcription) {
+      console.error("No transcription available");
       setError("No transcription available. Please transcribe audio first.");
       return;
     }
@@ -148,32 +169,33 @@ const Home: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [transcription, transformation, toast]);
 
-  const copyToClipboard = (
-    text: string,
-    type: "transcription" | "transformation",
-  ) => {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        toast({
-          title: `${type === "transcription" ? "Transcription" : "Transformed text"} copied`,
-          status: "success",
-          duration: 2000,
-          isClosable: true,
+  const copyToClipboard = useCallback(
+    (text: string, type: "transcription" | "transformation") => {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          console.log(`${type} copied to clipboard`);
+          toast({
+            title: `${type === "transcription" ? "Transcription" : "Transformed text"} copied`,
+            status: "success",
+            duration: 2000,
+            isClosable: true,
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to copy text: ", err);
+          toast({
+            title: "Failed to copy text",
+            status: "error",
+            duration: 2000,
+            isClosable: true,
+          });
         });
-      })
-      .catch((err) => {
-        console.error("Failed to copy text: ", err);
-        toast({
-          title: "Failed to copy text",
-          status: "error",
-          duration: 2000,
-          isClosable: true,
-        });
-      });
-  };
+    },
+    [toast],
+  );
 
   return (
     <VStack spacing={8} align="stretch">
