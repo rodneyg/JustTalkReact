@@ -8,6 +8,26 @@ const useAudioRecording = () => {
     null,
   );
 
+  const chunkAudio = async (
+    audioBlob: Blob,
+    chunkDuration: number = 30,
+  ): Promise<Blob[]> => {
+    const audioBuffer = await audioBlob.arrayBuffer();
+    const audio = new AudioContext();
+    const audioSource = await audio.decodeAudioData(audioBuffer);
+
+    const chunks: Blob[] = [];
+    const chunkSize = audio.sampleRate * chunkDuration;
+
+    for (let i = 0; i < audioSource.length; i += chunkSize) {
+      const chunk = audioSource.slice(i, i + chunkSize);
+      const chunkBlob = new Blob([chunk], { type: audioBlob.type });
+      chunks.push(chunkBlob);
+    }
+
+    return chunks;
+  };
+
   const startRecording = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
       navigator.mediaDevices
