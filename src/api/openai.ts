@@ -2,16 +2,12 @@
 import axios from "axios";
 
 const API_URL = "https://api.openai.com/v1";
-const API_KEY = "__OPENAI_API_KEY__";
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
-if (API_KEY === "__OPENAI_API_KEY__" || API_KEY === "API_KEY_NOT_SET") {
-  console.error("API key not set properly");
-  throw new Error(
-    "OpenAI API key is not set properly. Check your environment variables and build process.",
-  );
+if (!API_KEY) {
+  console.error("OpenAI API key is not set");
+  throw new Error("OpenAI API key is not set");
 }
-
-console.log("API_KEY is set"); // For debugging
 
 const openaiApi = axios.create({
   baseURL: API_URL,

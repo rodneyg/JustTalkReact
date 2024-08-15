@@ -1,4 +1,4 @@
-run = "npm run deploy"
+run = "npm run preview"
 entrypoint = "src/App.tsx"
 modules = ["nodejs-20:v8-20230920-bd784b9"]
 
@@ -14,7 +14,6 @@ hidden = [
 channel = "stable-24_05"
 
 [env]
-VITE_OPENAI_API_KEY = "$VITE_OPENAI_API_KEY"
 PATH = "/home/runner/$REPL_SLUG/.config/npm/node_global/bin:/home/runner/$REPL_SLUG/node_modules/.bin"
 npm_config_prefix = "/home/runner/$REPL_SLUG/.config/npm/node_global"
 
@@ -88,6 +87,10 @@ requiredFiles = [
   "package.json",
   "package-lock.json",
 ]
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
 
 [[ports]]
 localPort = 5173

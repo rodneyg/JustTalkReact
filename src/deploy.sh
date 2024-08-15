@@ -14,11 +14,9 @@ if [ -z "$VITE_OPENAI_API_KEY" ]; then
 fi
 
 # Build the project
-VITE_OPENAI_API_KEY="$VITE_OPENAI_API_KEY" npm run build
+npm run build
 
-# Log for debugging
-echo "Build completed. Checking for API key placeholder in built files:"
-grep -r "__OPENAI_API_KEY__" dist && echo "API key placeholder found, replacement failed" || echo "API key placeholder not found, likely replaced successfully"
+echo "Build completed. Starting preview server..."
 
-echo "Checking for 'API_KEY_NOT_SET' in built files:"
-grep -r "API_KEY_NOT_SET" dist && echo "'API_KEY_NOT_SET' found, indicating unsuccessful replacement" || echo "'API_KEY_NOT_SET' not found, indicating successful replacement"
+# Start the preview server
+npm run preview
