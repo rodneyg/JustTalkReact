@@ -1,5 +1,5 @@
 // src/app/Home.tsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   VStack,
   Heading,
@@ -28,7 +28,9 @@ const Home: React.FC = () => {
   const [transformedText, setTransformedText] = useState<string | null>(null);
   const [hasAttemptedTranscription, setHasAttemptedTranscription] =
     useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const toast = useToast();
+  const transcriptionControllerRef = useRef<AbortController | null>(null);
 
   const handleRecordingStart = useCallback(() => {
     console.log("Recording started");
@@ -82,10 +84,13 @@ const Home: React.FC = () => {
     }
 
     setIsLoading(true);
+    setIsTranscribing(true);
     setError(null);
     setTranscription(null);
     setTransformedText(null);
     setTranscriptionProgress(0);
+
+    transcriptionControllerRef.current = new AbortController();
 
     try {
       console.log("Starting transcription...");
@@ -97,7 +102,11 @@ const Home: React.FC = () => {
         const chunk = chunks[i];
         console.log(`Transcribing chunk ${i + 1}/${chunks.length}`);
         // Always use 'audio/wav' for transcription, as we've converted chunks to WAV
-        const result = await transcribeAudio(chunk, "audio/wav");
+        const result = await transcribeAudio(
+          chunk,
+          "audio/wav",
+          transcriptionControllerRef.current.signal,
+        );
         fullTranscription += result + " ";
         setTranscriptionProgress(((i + 1) / chunks.length) * 100);
       }
@@ -111,24 +120,42 @@ const Home: React.FC = () => {
         duration: 2000,
         isClosable: true,
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Transcription error:", err);
       let errorMessage = "Failed to transcribe audio";
+      let isAbortError = false;
+
       if (err instanceof Error) {
         errorMessage += `: ${err.message}`;
+        isAbortError = err.name === "AbortError";
       }
+
+      if (isAbortError) {
+        errorMessage = "Transcription cancelled";
+      }
+
       setError(errorMessage);
       toast({
-        title: "Transcription failed",
+        title: isAbortError
+          ? "Transcription cancelled"
+          : "Transcription failed",
         description: errorMessage,
-        status: "error",
+        status: isAbortError ? "info" : "error",
         duration: 5000,
         isClosable: true,
       });
     } finally {
       setIsLoading(false);
+      setIsTranscribing(false);
+      transcriptionControllerRef.current = null;
     }
   }, [audioBlob, chunkAudio, toast]);
+
+  const handleCancelTranscription = useCallback(() => {
+    if (transcriptionControllerRef.current) {
+      transcriptionControllerRef.current.abort();
+    }
+  }, []);
 
   const handleTransform = useCallback(async () => {
     if (!transcription) {
@@ -220,17 +247,26 @@ const Home: React.FC = () => {
           size="lg"
           width="full"
           onClick={handleTranscribe}
-          isLoading={isLoading}
+          isLoading={isTranscribing}
+          loadingText="Transcribing..."
+          isDisabled={isTranscribing}
         >
           {hasAttemptedTranscription
             ? "Retry Transcription"
             : "Transcribe Audio"}
         </Button>
       )}
-      {isLoading && (
+      {isTranscribing && (
         <VStack>
           <Text>Transcribing: {transcriptionProgress.toFixed(0)}%</Text>
           <Progress value={transcriptionProgress} width="100%" />
+          <Button
+            colorScheme="red"
+            size="sm"
+            onClick={handleCancelTranscription}
+          >
+            Cancel Transcription
+          </Button>
         </VStack>
       )}
       {transcription && (

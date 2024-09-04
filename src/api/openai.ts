@@ -20,6 +20,7 @@ const openaiApi = axios.create({
 export const transcribeAudio = async (
   audioBlob: Blob,
   mimeType: string,
+  signal: AbortSignal,
 ): Promise<string> => {
   const formData = new FormData();
   const fileExtension = mimeType.split("/")[1];
@@ -34,10 +35,15 @@ export const transcribeAudio = async (
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      signal, // Add the AbortSignal here
     });
     console.log("Transcription response:", response.data);
     return response.data.text;
   } catch (error) {
+    if (axios.isCancel(error)) {
+      console.log("Transcription request was cancelled");
+      throw new Error("Transcription cancelled");
+    }
     console.error("Error transcribing audio:", error);
     if (axios.isAxiosError(error)) {
       if (error.response) {
