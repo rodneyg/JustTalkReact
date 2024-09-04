@@ -18,10 +18,10 @@ import useAudioRecording from "../features/audioRecording/hooks/useAudioRecordin
 
 const Home: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcription, setTranscription] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [transcriptionProgress, setTranscriptionProgress] = useState(0);
   const { chunkAudio, audioMimeType } = useAudioRecording();
   const [transformation, setTransformation] = useState<string>("summarize");
@@ -33,12 +33,12 @@ const Home: React.FC = () => {
   const handleRecordingStart = useCallback(() => {
     console.log("Recording started");
     setIsLoading(false);
+    setIsRecording(true);
     setError(null);
     setAudioBlob(null);
     setTranscription(null);
     setTransformedText(null);
     setHasAttemptedTranscription(false);
-    setIsRecording(true);
     toast({
       title: "Recording started",
       status: "success",
@@ -72,7 +72,6 @@ const Home: React.FC = () => {
     console.error("Recording error:", errorMessage);
     setError(errorMessage);
     setIsLoading(false);
-    setIsRecording(false);
   }, []);
 
   const handleTranscribe = useCallback(async () => {
@@ -215,7 +214,7 @@ const Home: React.FC = () => {
         onRecordingComplete={handleRecordingComplete}
         onError={handleRecordingError}
       />
-      {audioBlob && !isRecording && (
+      {audioBlob && (
         <Button
           colorScheme="blue"
           size="lg"

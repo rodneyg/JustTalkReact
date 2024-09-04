@@ -1,6 +1,16 @@
 // src/features/audioRecording/components/AudioRecorder.tsx
-import React, { useState, useEffect } from "react";
-import { VStack, Box, Text } from "@chakra-ui/react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  VStack,
+  Box,
+  Text,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+} from "@chakra-ui/react";
 import useAudioRecording from "../hooks/useAudioRecording";
 import Button from "../../../components/Button";
 
@@ -22,12 +32,22 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   const { startRecording, stopRecording, audioBlob, audioMimeType } =
     useAudioRecording();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
-  const handleToggleRecording = () => {
+  console.log(
+    "AudioRecorder rendering, isRecording:",
+    isRecording,
+    "isConfirmOpen:",
+    isConfirmOpen,
+  );
+
+  const handleToggleRecording = useCallback(() => {
+    console.log(`handleToggleRecording called. isRecording: ${isRecording}`);
     if (isRecording) {
-      console.log("Stopping recording...");
-      stopRecording();
-      onRecordingStop();
+      console.log("Attempting to open confirm dialog");
+      setIsConfirmOpen(true);
+      console.log(`isConfirmOpen set to: ${true}`);
     } else {
       console.log("Starting recording...");
       startRecording()
@@ -40,7 +60,22 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
           onError(error.message);
         });
     }
-  };
+  }, [isRecording, startRecording, onRecordingStart, onError]);
+
+  const handleConfirmStop = useCallback(() => {
+    console.log("Confirm stop: Stopping recording...");
+    stopRecording();
+    onRecordingStop();
+    setIsConfirmOpen(false);
+  }, [stopRecording, onRecordingStop]);
+
+  useEffect(() => {
+    console.log(`isRecording changed to: ${isRecording}`);
+  }, [isRecording]);
+
+  useEffect(() => {
+    console.log(`isConfirmOpen changed to: ${isConfirmOpen}`);
+  }, [isConfirmOpen]);
 
   useEffect(() => {
     if (audioBlob) {
@@ -50,6 +85,10 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
       const url = URL.createObjectURL(audioBlob);
       setAudioUrl(url);
       onRecordingComplete(audioBlob);
+
+      return () => {
+        URL.revokeObjectURL(url);
+      };
     }
   }, [audioBlob, audioMimeType, onRecordingComplete]);
 
@@ -78,6 +117,50 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
           </audio>
         </Box>
       )}
+
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => {
+          console.log("AlertDialog onClose called");
+          setIsConfirmOpen(false);
+        }}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Stop Recording
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to stop recording? This action cannot be
+              undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button
+                ref={cancelRef}
+                onClick={() => {
+                  console.log("Cancel button clicked");
+                  setIsConfirmOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="red"
+                onClick={() => {
+                  console.log("Confirm stop button clicked");
+                  handleConfirmStop();
+                }}
+                ml={3}
+              >
+                Stop Recording
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </VStack>
   );
 };

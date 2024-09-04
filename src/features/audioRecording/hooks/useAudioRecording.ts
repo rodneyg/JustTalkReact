@@ -1,5 +1,5 @@
 // src/features/audioRecording/hooks/useAudioRecording.ts
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { getNetworkType, getChunkDuration } from "../../../utils/networkUtils";
 
 const useAudioRecording = () => {
@@ -9,6 +9,9 @@ const useAudioRecording = () => {
     null,
   );
   const [audioMimeType, setAudioMimeType] = useState<string>("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const audioChunks = useRef<Blob[]>([]);
 
   const startRecording = useCallback((): Promise<void> => {
     console.log("Starting audio recording...");
@@ -49,27 +52,30 @@ const useAudioRecording = () => {
           );
           setMediaRecorder(recorder);
 
-          const chunks: Blob[] = [];
-
           recorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
-              chunks.push(event.data);
+              audioChunks.current.push(event.data);
             }
           };
 
           recorder.onstart = () => {
             console.log("MediaRecorder started");
             setIsRecording(true);
+            audioChunks.current = [];
           };
 
           recorder.onstop = () => {
             console.log("MediaRecorder stopped");
             setIsRecording(false);
-            const blob = new Blob(chunks, { type: mimeType || "audio/wav" });
+            const blob = new Blob(audioChunks.current, {
+              type: mimeType || "audio/wav",
+            });
             console.log(
               `Received audio data: ${blob.size} bytes, MIME type: ${blob.type}`,
             );
             setAudioBlob(blob);
+            const url = URL.createObjectURL(blob);
+            setAudioUrl(url);
             stream.getTracks().forEach((track) => track.stop());
           };
 
@@ -89,6 +95,33 @@ const useAudioRecording = () => {
       mediaRecorder.stop();
     }
   }, [mediaRecorder]);
+
+  const handleToggleRecording = useCallback(() => {
+    console.log("handleToggleRecording called, isRecording:", isRecording);
+    if (isRecording) {
+      console.log("Attempting to open confirm dialog");
+      setIsConfirmOpen(true);
+      console.log("isConfirmOpen set to true");
+    } else {
+      console.log("Starting new recording");
+      startRecording().catch((error) =>
+        console.error("Error starting recording:", error),
+      );
+    }
+  }, [isRecording, startRecording]);
+
+  const handleConfirmStop = useCallback(() => {
+    console.log("handleConfirmStop called");
+    stopRecording();
+    setIsConfirmOpen(false);
+    console.log("isConfirmOpen set to false");
+  }, [stopRecording]);
+
+  const cancelStopRecording = useCallback(() => {
+    console.log("cancelStopRecording called");
+    setIsConfirmOpen(false);
+    console.log("isConfirmOpen set to false");
+  }, []);
 
   const chunkAudio = useCallback(async (audioBlob: Blob): Promise<Blob[]> => {
     console.log("Starting audio chunking...");
@@ -164,6 +197,12 @@ const useAudioRecording = () => {
     audioBlob,
     chunkAudio,
     audioMimeType,
+    audioUrl,
+    setAudioUrl,
+    isConfirmOpen,
+    handleToggleRecording,
+    handleConfirmStop,
+    cancelStopRecording,
   };
 };
 
@@ -173,7 +212,7 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
   const length = buffer.length * numOfChan * 2 + 44;
   const outBuffer = new ArrayBuffer(length);
   const view = new DataView(outBuffer);
-  const channels = [];
+  const channels: Float32Array[] = [];
   let sample = 0;
   let offset = 0;
   let pos = 0;
