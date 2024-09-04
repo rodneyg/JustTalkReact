@@ -1,5 +1,5 @@
 // src/app/Home.tsx
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   VStack,
   Heading,
@@ -8,6 +8,8 @@ import {
   Box,
   HStack,
   Progress,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import AudioRecorder from "../features/audioRecording/components/AudioRecorder";
 import ErrorMessage from "../components/ErrorMessage";
@@ -31,6 +33,18 @@ const Home: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const toast = useToast();
   const transcriptionControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isTranscribing) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isTranscribing]);
 
   const handleRecordingStart = useCallback(() => {
     console.log("Recording started");
@@ -234,12 +248,20 @@ const Home: React.FC = () => {
         </Text>
       </Box>
       {error && <ErrorMessage title="Error" description={error} />}
+      {isTranscribing && (
+        <Alert status="info">
+          <AlertIcon />
+          Transcription in progress. Please wait before starting a new
+          recording.
+        </Alert>
+      )}
       <AudioRecorder
         isRecording={isRecording}
         onRecordingStart={handleRecordingStart}
         onRecordingStop={handleRecordingStop}
         onRecordingComplete={handleRecordingComplete}
         onError={handleRecordingError}
+        isDisabled={isTranscribing}
       />
       {audioBlob && (
         <Button
@@ -249,7 +271,7 @@ const Home: React.FC = () => {
           onClick={handleTranscribe}
           isLoading={isTranscribing}
           loadingText="Transcribing..."
-          isDisabled={isTranscribing}
+          isDisabled={isTranscribing || isRecording}
         >
           {hasAttemptedTranscription
             ? "Retry Transcription"

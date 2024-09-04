@@ -21,6 +21,7 @@ interface AudioRecorderProps {
   onRecordingStop: () => void;
   onRecordingComplete: (blob: Blob) => void;
   onError: (error: string) => void;
+  isDisabled?: boolean;
 }
 
 const AudioRecorder: React.FC<AudioRecorderProps> = ({
@@ -29,6 +30,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingStop,
   onRecordingComplete,
   onError,
+  isDisabled = false,
 }) => {
   const { startRecording, stopRecording, audioBlob, audioMimeType } =
     useAudioRecording();
@@ -41,6 +43,8 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
     isRecording,
     "isConfirmOpen:",
     isConfirmOpen,
+    "isDisabled:",
+    isDisabled,
   );
 
   const handleToggleRecording = useCallback(() => {
@@ -111,6 +115,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
         colorScheme={isRecording ? "red" : "green"}
         leftIcon={isRecording ? "⏹️" : "🎙️"}
         size="lg"
+        isDisabled={isDisabled}
       >
         {isRecording ? "Stop Recording" : "Start Recording"}
       </Button>
