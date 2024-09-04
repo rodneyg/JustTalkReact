@@ -13,6 +13,7 @@ import {
 } from "@chakra-ui/react";
 import useAudioRecording from "../hooks/useAudioRecording";
 import Button from "../../../components/Button";
+import { DownloadIcon } from "@chakra-ui/icons";
 
 interface AudioRecorderProps {
   isRecording: boolean;
@@ -69,6 +70,17 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
     setIsConfirmOpen(false);
   }, [stopRecording, onRecordingStop]);
 
+  const handleDownload = useCallback(() => {
+    if (audioBlob && audioUrl) {
+      const link = document.createElement("a");
+      link.href = audioUrl;
+      link.download = `recording_${new Date().toISOString()}.webm`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }, [audioBlob, audioUrl]);
+
   useEffect(() => {
     console.log(`isRecording changed to: ${isRecording}`);
   }, [isRecording]);
@@ -115,6 +127,14 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
           <audio controls src={audioUrl} style={{ width: "100%" }}>
             Your browser does not support the audio element.
           </audio>
+          <Button
+            leftIcon={<DownloadIcon />}
+            colorScheme="blue"
+            mt={2}
+            onClick={handleDownload}
+          >
+            Download Recording
+          </Button>
         </Box>
       )}
 
