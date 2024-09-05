@@ -76,9 +76,11 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
 
   const handleDownload = useCallback(() => {
     if (audioBlob && audioUrl) {
+      const fileName =
+        prompt("Enter a name for your recording:", "recording") || "recording"; // Prompt for file name
       const link = document.createElement("a");
       link.href = audioUrl;
-      link.download = `recording_${new Date().toISOString()}.webm`;
+      link.download = `${fileName}.wav`; // Change file format to .wav
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
